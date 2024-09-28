@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-from src.metrics.tracker import MetricTracker
-=======
 from pathlib import Path
 
 import pandas as pd
@@ -8,7 +5,6 @@ import pandas as pd
 from src.logger.utils import plot_spectrogram
 from src.metrics.tracker import MetricTracker
 from src.metrics.utils import calc_cer, calc_wer
->>>>>>> asr
 from src.trainer.base_trainer import BaseTrainer
 
 

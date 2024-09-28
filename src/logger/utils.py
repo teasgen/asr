@@ -40,8 +40,6 @@ def plot_images(imgs, config):
     plt.close()
 
     return image
-<<<<<<< HEAD
-=======
 
 
 def plot_spectrogram(spectrogram, name=None):
@@ -67,4 +65,3 @@ def plot_spectrogram(spectrogram, name=None):
     plt.close()
 
     return image
->>>>>>> asr

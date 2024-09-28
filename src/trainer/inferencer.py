@@ -20,10 +20,7 @@ class Inferencer(BaseTrainer):
         config,
         device,
         dataloaders,
-<<<<<<< HEAD
-=======
         text_encoder,
->>>>>>> asr
         save_path,
         metrics=None,
         batch_transforms=None,
@@ -38,10 +35,7 @@ class Inferencer(BaseTrainer):
             device (str): device for tensors and model.
             dataloaders (dict[DataLoader]): dataloaders for different
                 sets of data.
-<<<<<<< HEAD
-=======
             text_encoder (CTCTextEncoder): text encoder.
->>>>>>> asr
             save_path (str): path to save model predictions and other
                 information.
             metrics (dict): dict with the definition of metrics for
@@ -67,11 +61,8 @@ class Inferencer(BaseTrainer):
         self.model = model
         self.batch_transforms = batch_transforms
 
-<<<<<<< HEAD
-=======
         self.text_encoder = text_encoder
 
->>>>>>> asr
         # define dataloaders
         self.evaluation_dataloaders = {k: v for k, v in dataloaders.items()}
 
@@ -129,12 +120,9 @@ class Inferencer(BaseTrainer):
                 the dataloader (possibly transformed via batch transform)
                 and model outputs.
         """
-<<<<<<< HEAD
-=======
         # TODO change inference logic so it suits ASR assignment
         # and task pipeline
 
->>>>>>> asr
         batch = self.move_batch_to_device(batch)
         batch = self.transform_batch(batch)  # transform batch on device -- faster
 

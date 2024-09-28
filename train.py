@@ -33,14 +33,6 @@ def main(config):
     else:
         device = config.trainer.device
 
-<<<<<<< HEAD
-    # setup data_loader instances
-    # batch_transforms should be put on device
-    dataloaders, batch_transforms = get_dataloaders(config, device)
-
-    # build model architecture, then print to console
-    model = instantiate(config.model).to(device)
-=======
     # setup text_encoder
     text_encoder = instantiate(config.text_encoder)
 
@@ -50,14 +42,10 @@ def main(config):
 
     # build model architecture, then print to console
     model = instantiate(config.model, n_tokens=len(text_encoder)).to(device)
->>>>>>> asr
     logger.info(model)
 
     # get function handles of loss and metrics
     loss_function = instantiate(config.loss_function).to(device)
-<<<<<<< HEAD
-    metrics = instantiate(config.metrics)
-=======
 
     metrics = {"train": [], "inference": []}
     for metric_type in ["train", "inference"]:
@@ -66,7 +54,6 @@ def main(config):
             metrics[metric_type].append(
                 instantiate(metric_config, text_encoder=text_encoder)
             )
->>>>>>> asr
 
     # build optimizer, learning rate scheduler
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
@@ -83,10 +70,7 @@ def main(config):
         metrics=metrics,
         optimizer=optimizer,
         lr_scheduler=lr_scheduler,
-<<<<<<< HEAD
-=======
         text_encoder=text_encoder,
->>>>>>> asr
         config=config,
         device=device,
         dataloaders=dataloaders,
