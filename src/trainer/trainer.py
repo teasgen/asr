@@ -78,13 +78,6 @@ class Trainer(BaseTrainer):
 
         # logging scheme might be different for different partitions
         if mode == "train":  # the method is called only every self.log_step steps
-<<<<<<< HEAD
-            # Log Stuff
-            pass
-        else:
-            # Log Stuff
-            pass
-=======
             self.log_spectrogram(**batch)
         else:
             # Log Stuff
@@ -128,4 +121,3 @@ class Trainer(BaseTrainer):
         self.writer.add_table(
             "predictions", pd.DataFrame.from_dict(rows, orient="index")
         )
->>>>>>> asr
