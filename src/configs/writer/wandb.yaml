@@ -1,5 +1,9 @@
 _target_: src.logger.WandBWriter
+<<<<<<< HEAD
 project_name: "pytorch_template"
+=======
+project_name: "pytorch_template_asr_example"
+>>>>>>> asr
 entity: null
 run_name: "testing"
 mode: "online"

@@ -14,6 +14,7 @@ def collate_fn(dataset_items: list[dict]):
             of the tensors.
     """
 
+<<<<<<< HEAD
     result_batch = {}
 
     # example of collate_fn
@@ -23,3 +24,6 @@ def collate_fn(dataset_items: list[dict]):
     result_batch["labels"] = torch.tensor([elem["labels"] for elem in dataset_items])
 
     return result_batch
+=======
+    pass  # TODO
+>>>>>>> asr

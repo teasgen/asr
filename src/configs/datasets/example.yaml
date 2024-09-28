@@ -1,4 +1,5 @@
 train:
+<<<<<<< HEAD
   _target_: torch.utils.data.ConcatDataset # we can concat datasets if we want to
   datasets:
     - _target_: src.datasets.ExampleDataset
@@ -26,4 +27,16 @@ test:
   dataset_length: 15
   n_classes: 10
   name: "test"
+=======
+  _target_: src.datasets.LibrispeechDataset
+  part: "train-clean-100"
+  instance_transforms: ${transforms.instance_transforms.train}
+val:
+  _target_: src.datasets.LibrispeechDataset
+  part: "dev-clean"
+  instance_transforms: ${transforms.instance_transforms.inference}
+test:
+  _target_: src.datasets.LibrispeechDataset
+  part: "test-clean"
+>>>>>>> asr
   instance_transforms: ${transforms.instance_transforms.inference}

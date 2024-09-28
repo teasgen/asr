@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # PyTorch Template for DL projects
 
 <p align="center">
@@ -6,12 +7,21 @@
   <a href="#installation">Installation</a> •
   <a href="#how-to-use">How To Use</a> •
   <a href="#useful-links">Useful Links</a> •
+=======
+# Automatic Speech Recognition (ASR) with PyTorch
+
+<p align="center">
+  <a href="#about">About</a> •
+  <a href="#installation">Installation</a> •
+  <a href="#how-to-use">How To Use</a> •
+>>>>>>> asr
   <a href="#credits">Credits</a> •
   <a href="#license">License</a>
 </p>
 
 ## About
 
+<<<<<<< HEAD
 This repository contains a template for [PyTorch](https://pytorch.org/)-based Deep Learning projects.
 
 The template utilizes different python-dev techniques to improve code readability. Configuration methods enhance reproducibility and experiments control.
@@ -32,6 +42,15 @@ You can find examples of this template completed for different tasks in other br
 ## Installation
 
 Installation may depend on your task. The general steps are the following:
+=======
+This repository contains a template for solving ASR task with PyTorch. This template branch is a part of the [HSE DLA course](https://github.com/markovka17/dla) ASR homework. Some parts of the code are missing (or do not follow the most optimal design choices...) and students are required to fill these parts themselves (as well as writing their own models, etc.).
+
+See the task assignment [here](https://github.com/markovka17/dla/tree/2024/hw1_asr).
+
+## Installation
+
+Follow these steps to install the project:
+>>>>>>> asr
 
 0. (Optional) Create and activate new environment using [`conda`](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) or `venv` ([`+pyenv`](https://github.com/pyenv/pyenv)).
 
@@ -85,6 +104,7 @@ To run inference (evaluate the model or save predictions):
 python3 inference.py HYDRA_CONFIG_ARGUMENTS
 ```
 
+<<<<<<< HEAD
 ## Useful Links:
 
 You may find the following links useful:
@@ -104,6 +124,11 @@ You may find the following links useful:
 ## Credits
 
 This repository is based on a heavily modified fork of [pytorch-template](https://github.com/victoresque/pytorch-template) and [asr_project_template](https://github.com/WrathOfGrapes/asr_project_template) repositories.
+=======
+## Credits
+
+This repository is based on a [PyTorch Project Template](https://github.com/Blinorot/pytorch_project_template).
+>>>>>>> asr
 
 ## License
 
