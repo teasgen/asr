@@ -1,4 +1,5 @@
 import re
+from collections import defaultdict
 from string import ascii_lowercase
 
 import torch
@@ -59,18 +60,63 @@ class CTCTextEncoder:
         """
         return "".join([self.ind2char[int(ind)] for ind in inds]).strip()
 
-    def ctc_decode(self, inds, type: str = "argmax") -> str:
+    def ctc_decode(self, inds) -> str:
         decoded = []
         last_char_idx = self.empty_token_idx
         for char_idx in inds:
             if char_idx == self.empty_token_idx or char_idx == last_char_idx:
                 last_char_idx = char_idx
                 continue
+            last_char_idx = char_idx
             decoded.append(self.ind2char[char_idx])
         return "".join(decoded)
 
-    def ctc_get_prediction(self, log_probs: torch.Tensor, type: str = "argmax"):
-        assert type in ["argmax", "beam", "lm_beam"]
+    def ctc_get_prediction(
+        self,
+        log_probs: torch.Tensor,
+        log_probs_length: torch.Tensor,
+        type: str = "argmax",
+    ) -> torch.Tensor:
+        assert type in ["argmax", "beam", "lm_beam_search"]
+
+        if type == "argmax":
+            predictions = torch.argmax(log_probs.cpu(), dim=-1).numpy()
+            pred_texts = []
+            for log_prob_vec, length in zip(predictions, log_probs_length):
+                pred_texts.append(self.text_encoder.ctc_decode(log_prob_vec[:length]))
+            return pred_texts
+        elif type == "beam_search":
+            pred_texts = []
+            for log_probs_line, length in zip(log_probs, log_probs_length):
+                pred_texts.append(
+                    self.ctc_beam_search(log_probs_line[:].exp().numpy(), 100)
+                )
+            return pred_texts
+
+    def expand_merge(self, dp: dict, next_probs: torch.Tensor):
+        new_dp = defaultdict(float)
+        for idx, next_prob in enumerate(next_probs):
+            cur_char = self.ind2char[idx]
+            for (prefix, last_char), proba in dp.items():
+                if last_char == cur_char or (cur_char == self.EMPTY_TOK):
+                    new_prefix = prefix
+                else:
+                    new_prefix = prefix + cur_char
+                new_dp[(new_prefix, cur_char)] += proba + next_prob
+        return new_dp
+
+    def truncate(dp: dict, beam_size: int):
+        return dict(sorted(dp.items(), key=lambda x: -x[1])[:beam_size])
+
+    def ctc_beam_search(self, log_probs: torch.Tensor, beam_size: int) -> list:
+        dp = {("", self.EMPTY_TOK): 1.0}
+        for log_proba in log_probs:
+            dp = self.expand_merge(dp, log_proba)
+            dp = self.truncate(dp, beam_size)
+        return [
+            (prefix, proba)
+            for (prefix, _), proba in sorted(dp.items(), key=lambda x: -x[1])
+        ]
 
     @staticmethod
     def normalize_text(text: str):
