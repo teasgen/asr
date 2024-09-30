@@ -25,6 +25,7 @@ class CTCTextEncoder:
 
         self.alphabet = alphabet
         self.vocab = [self.EMPTY_TOK] + list(self.alphabet)
+        self.empty_token_idx = 0
 
         self.ind2char = dict(enumerate(self.vocab))
         self.char2ind = {v: k for k, v in self.ind2char.items()}
@@ -58,8 +59,18 @@ class CTCTextEncoder:
         """
         return "".join([self.ind2char[int(ind)] for ind in inds]).strip()
 
-    def ctc_decode(self, inds) -> str:
-        pass  # TODO
+    def ctc_decode(self, inds, type: str = "argmax") -> str:
+        decoded = []
+        last_char_idx = self.empty_token_idx
+        for char_idx in inds:
+            if char_idx == self.empty_token_idx or char_idx == last_char_idx:
+                last_char_idx = char_idx
+                continue
+            decoded.append(self.ind2char[char_idx])
+        return "".join(decoded)
+
+    def ctc_get_prediction(self, log_probs: torch.Tensor, type: str = "argmax"):
+        assert type in ["argmax", "beam", "lm_beam"]
 
     @staticmethod
     def normalize_text(text: str):
