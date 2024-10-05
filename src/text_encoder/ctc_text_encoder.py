@@ -14,7 +14,7 @@ import torch
 class CTCTextEncoder:
     EMPTY_TOK = ""
 
-    def __init__(self, alphabet=None, **kwargs):
+    def __init__(self, alphabet=None, decoder_type="argmax", **kwargs):
         """
         Args:
             alphabet (list): alphabet for language. If None, it will be
@@ -25,6 +25,9 @@ class CTCTextEncoder:
             alphabet = list(ascii_lowercase + " ")
 
         self.alphabet = alphabet
+
+        assert decoder_type in ["argmax", "beam_search", "lm_beam_search"]
+        self.decoder_type = decoder_type
         self.vocab = [self.EMPTY_TOK] + list(self.alphabet)
         self.empty_token_idx = 0
 
@@ -71,27 +74,27 @@ class CTCTextEncoder:
             decoded.append(self.ind2char[char_idx])
         return "".join(decoded)
 
-    def ctc_get_prediction(
+    def get_prediction(
         self,
         log_probs: torch.Tensor,
         log_probs_length: torch.Tensor,
-        type: str = "argmax",
-    ) -> torch.Tensor:
-        assert type in ["argmax", "beam", "lm_beam_search"]
-
-        if type == "argmax":
+    ) -> list[list[str]]:
+        log_probs_length = log_probs_length.detach().numpy()
+        if self.decoder_type == "argmax":
             predictions = torch.argmax(log_probs.cpu(), dim=-1).numpy()
             pred_texts = []
             for log_prob_vec, length in zip(predictions, log_probs_length):
-                pred_texts.append(self.text_encoder.ctc_decode(log_prob_vec[:length]))
+                pred_texts.append([self.text_encoder.ctc_decode(log_prob_vec[:length])])
             return pred_texts
-        elif type == "beam_search":
+        elif self.decoder_type == "beam_search":
             pred_texts = []
             for log_probs_line, length in zip(log_probs, log_probs_length):
-                pred_texts.append(
-                    self.ctc_beam_search(log_probs_line[:].exp().numpy(), 100)
-                )
+                preds = self.ctc_beam_search(log_probs_line[:].exp().numpy(), 5)
+                preds = [hypo for (hypo, _) in preds]
+                pred_texts.append(preds)
             return pred_texts
+        else:
+            raise NotImplementedError
 
     def expand_merge(self, dp: dict, next_probs: torch.Tensor):
         new_dp = defaultdict(float)
@@ -105,7 +108,7 @@ class CTCTextEncoder:
                 new_dp[(new_prefix, cur_char)] += proba + next_prob
         return new_dp
 
-    def truncate(dp: dict, beam_size: int):
+    def truncate(self, dp: dict, beam_size: int):
         return dict(sorted(dp.items(), key=lambda x: -x[1])[:beam_size])
 
     def ctc_beam_search(self, log_probs: torch.Tensor, beam_size: int) -> list:

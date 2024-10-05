@@ -6,12 +6,8 @@ from torch import Tensor
 from src.metrics.base_metric import BaseMetric
 from src.metrics.utils import calc_wer
 
-# TODO beam search / LM versions
-# Note: they can be written in a pretty way
-# Note 2: overall metric design can be significantly improved
 
-
-class ArgmaxWERMetric(BaseMetric):
+class WERMetric(BaseMetric):
     def __init__(self, text_encoder, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.text_encoder = text_encoder
@@ -20,10 +16,10 @@ class ArgmaxWERMetric(BaseMetric):
         self, log_probs: Tensor, log_probs_length: Tensor, text: List[str], **kwargs
     ):
         wers = []
-        predictions = torch.argmax(log_probs.cpu(), dim=-1).numpy()
-        lengths = log_probs_length.detach().numpy()
-        for log_prob_vec, length, target_text in zip(predictions, lengths, text):
+        predictions = self.text_encoder.get_prediction(log_probs, log_probs_length)
+        for pred_texts, target_text in zip(predictions, text):
             target_text = self.text_encoder.normalize_text(target_text)
-            pred_text = self.text_encoder.ctc_decode(log_prob_vec[:length])
-            wers.append(calc_wer(target_text, pred_text))
+            wers.append(
+                min(calc_wer(target_text, pred_text) for pred_text in pred_texts)
+            )
         return sum(wers) / len(wers)

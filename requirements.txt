@@ -1,6 +1,6 @@
-torch==2.2.0
-torchvision==0.17.0
-torchaudio==2.2.0
+torch==1.13.0
+torchvision==0.14.0
+torchaudio==0.13.0
 soundfile
 numpy==1.26.4
 torch_audiomentations
@@ -13,6 +13,7 @@ hydra-core
 datasets=3.0.1
 wget=3.2
 editdistance=0.8.1
+einops=0.8.0
 
 black
 isort
