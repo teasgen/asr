@@ -80,11 +80,12 @@ class CTCTextEncoder:
         log_probs_length: torch.Tensor,
     ) -> list[list[str]]:
         log_probs_length = log_probs_length.detach().numpy()
+        log_probs = log_probs.detach().cpu()
         if self.decoder_type == "argmax":
             predictions = torch.argmax(log_probs.cpu(), dim=-1).numpy()
             pred_texts = []
             for log_prob_vec, length in zip(predictions, log_probs_length):
-                pred_texts.append([self.text_encoder.ctc_decode(log_prob_vec[:length])])
+                pred_texts.append([self.ctc_decode(log_prob_vec[:length])])
             return pred_texts
         elif self.decoder_type == "beam_search":
             pred_texts = []

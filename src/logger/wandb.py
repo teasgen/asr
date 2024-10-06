@@ -39,6 +39,8 @@ class WandBWriter:
         """
         try:
             import wandb
+            import os
+            os.environ["WANDB_HOST"] = "closed"
 
             wandb.login()
 
