@@ -3,12 +3,7 @@ from collections import defaultdict
 from string import ascii_lowercase
 
 import torch
-
-# TODO add CTC decode
-# TODO add BPE, LM, Beam Search support
-# Note: think about metrics and encoder
-# The design can be remarkably improved
-# to calculate stuff more efficiently and prettier
+import numpy as np
 
 
 class CTCTextEncoder:
@@ -26,7 +21,7 @@ class CTCTextEncoder:
 
         self.alphabet = alphabet
 
-        assert decoder_type in ["argmax", "beam_search", "lm_beam_search"]
+        # assert decoder_type in ["argmax", "beam_search", "beam_search_open_source"]
         self.decoder_type = decoder_type
         self.vocab = [self.EMPTY_TOK] + list(self.alphabet)
         self.empty_token_idx = 0
@@ -81,18 +76,47 @@ class CTCTextEncoder:
     ) -> list[list[str]]:
         log_probs_length = log_probs_length.detach().numpy()
         log_probs = log_probs.detach().cpu()
+        pred_texts = []
         if self.decoder_type == "argmax":
             predictions = torch.argmax(log_probs.cpu(), dim=-1).numpy()
-            pred_texts = []
             for log_prob_vec, length in zip(predictions, log_probs_length):
                 pred_texts.append([self.ctc_decode(log_prob_vec[:length])])
             return pred_texts
         elif self.decoder_type == "beam_search":
-            pred_texts = []
             for log_probs_line, length in zip(log_probs, log_probs_length):
                 preds = self.ctc_beam_search(log_probs_line[:].exp().numpy(), 5)
                 preds = [hypo for (hypo, _) in preds]
                 pred_texts.append(preds)
+            return pred_texts
+        elif self.decoder_type == "beam_search_open_source":
+            from pyctcdecode import build_ctcdecoder
+
+            labels = [
+                "", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l",
+                "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", " "
+            ]
+
+            decoder = build_ctcdecoder(labels, alpha=0.5, beta=1.0)
+            log_probs = log_probs.cpu().numpy()
+            for log_probs_line, length in zip(log_probs, log_probs_length):
+                preds = decoder.decode_beams(log_probs_line, 5)
+                preds = [x[0] for x in preds]
+                pred_texts.append(preds)
+            return pred_texts
+        elif self.decoder_type == "beam_search_torch":
+            import torch
+            from torchaudio.models.decoder import ctc_decoder
+
+            decoder = ctc_decoder(
+                lexicon=None,
+                tokens=["","a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l","m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", " "],
+                blank_token="",
+                sil_token=" ",
+                nbest=10,
+                beam_size=10,
+            )
+            pred_hypos = decoder(log_probs.to(torch.float32), torch.from_numpy(log_probs_length))
+            pred_texts = [["".join(decoder.idxs_to_tokens(hypo.tokens)).strip() for hypo in preds] for preds in pred_hypos]
             return pred_texts
         else:
             raise NotImplementedError
@@ -102,11 +126,15 @@ class CTCTextEncoder:
         for idx, next_prob in enumerate(next_probs):
             cur_char = self.ind2char[idx]
             for (prefix, last_char), proba in dp.items():
-                if last_char == cur_char or (cur_char == self.EMPTY_TOK):
+                if last_char == cur_char:
                     new_prefix = prefix
                 else:
-                    new_prefix = prefix + cur_char
-                new_dp[(new_prefix, cur_char)] += proba + next_prob
+                    if last_char != self.EMPTY_TOK:
+                        new_prefix = prefix + cur_char
+                    else:
+                        new_prefix = prefix
+
+                new_dp[(new_prefix, cur_char)] += proba * next_prob
         return new_dp
 
     def truncate(self, dp: dict, beam_size: int):

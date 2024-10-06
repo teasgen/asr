@@ -101,13 +101,17 @@ class RMHA(nn.Module):
         self.pos_enc = pos_enc
 
         self.qkv = nn.Linear(d_hidden, 3 * d_hidden)
+        self.u_bias = nn.Parameter(torch.Tensor(self.n_heads, self.d_head))
+        self.v_bias = nn.Parameter(torch.Tensor(self.n_heads, self.d_head))
+        torch.nn.init.xavier_uniform_(self.u_bias)
+        torch.nn.init.xavier_uniform_(self.v_bias)
+
         self.pos = nn.Linear(d_hidden, d_hidden, bias=False)
         self.ffn = nn.Linear(d_hidden, d_hidden)
-        self.attn_dropout = nn.Dropout(p=dropout)
         self.ffn_dropout = nn.Dropout(p=dropout)
         self.ln = nn.LayerNorm(d_hidden)
 
-    def forward(self, x):
+    def forward(self, x, mask=None):
         B, T, _ = x.shape
 
         x = self.ln(x)
@@ -129,12 +133,16 @@ class RMHA(nn.Module):
             "b t h d -> b h d t",
         )
 
-        qk = torch.matmul(q.transpose(1, 2), k)
-        q_pos = torch.matmul(q.transpose(1, 2), pos_emb)
+        qk = torch.matmul((q + self.u_bias).transpose(1, 2), k)
+        q_pos = torch.matmul((q + self.v_bias).transpose(1, 2), pos_emb)
         q_pos = self._skew(q_pos)
-        numenator = F.softmax((qk + q_pos) / math.sqrt(self.d_hidden), -1)
+        attn = (qk + q_pos) / math.sqrt(self.d_hidden)
+        if mask is not None: # applies mask to padding
+            mask = mask.unsqueeze(1)
+            attn.masked_fill_(mask, -1e+30)
+        qk_softmax = F.softmax(attn, -1)
 
-        output = torch.matmul(numenator, v.transpose(2, 3)).transpose(1, 2)
+        output = torch.matmul(qk_softmax, v.transpose(2, 3)).transpose(1, 2)
         output = output.contiguous().view(B, -1, self.d_hidden)
 
         output = self.ffn_dropout(self.ffn(output))
@@ -165,15 +173,11 @@ class ConformerBlock(nn.Module):
         self.ffn2 = FFNBlock(d_hidden, dropout)
         self.ln = nn.LayerNorm(d_hidden)
 
-    def forward(self, x):
-        residual = x
-        x = self.ffn1(x) * 0.5 + residual
-        residual = x
-        x = self.mha(x) + residual
-        residual = x
-        x = self.conv(x) + residual
-        residual = x
-        x = self.ffn2(x) * 0.5 + residual
+    def forward(self, x, mask=None):
+        x = self.ffn1(x) * 0.5 + x
+        x = self.mha(x, mask) + x
+        x = self.conv(x) + x
+        x = self.ffn2(x) * 0.5 + x
         return self.ln(x)
 
 
@@ -197,7 +201,7 @@ class ConformerEncoder(nn.Module):
             d_hidden * (((d_in - 1) // 2 - 1) // 2), d_hidden
         )
         self.dropout = nn.Dropout(p=dropout)
-        self.conformer_blocks = nn.Sequential()
+        self.conformer_blocks = nn.ModuleList()
         pos_enc = AbsolutePosEncoding(d_hidden)
         for _ in range(n_layers):
             self.conformer_blocks.append(
@@ -221,13 +225,24 @@ class ConformerEncoder(nn.Module):
             output (dict): output dict containing log_probs and
                 transformed lengths.
         """
+        B, _, _ = spectrogram.shape
         spectrogram = spectrogram.transpose(1, 2)
         x = self.conv_subsampling(spectrogram)
+        log_probs_length = self.transform_input_lengths(spectrogram_length)
+
+        # create (B, seq_len_i) padding mask
+        T = x.shape[1]
+        range_tensor = torch.arange(T).unsqueeze(0)  # (1, max_len)
+        range_batch = range_tensor.expand(B, T)  # (batch_size, max_len)
+        mask_1d = range_batch < log_probs_length.unsqueeze(1)  # (batch_size, max_len)
+        mask = mask_1d.unsqueeze(2) & mask_1d.unsqueeze(1) # make 2d upper-left ones square mask from 1d
+        mask = ~mask.to(torch.cuda.current_device())
+
         x = self.ffn_after_subsampling(x)
         x = self.dropout(x)
-        output = self.conformer_blocks(x)
-        log_probs_length = self.transform_input_lengths(spectrogram_length)
-        return {"out": output, "log_probs_length": log_probs_length}
+        for block in self.conformer_blocks:
+            x = block(x, mask=mask)
+        return {"out": x, "log_probs_length": log_probs_length}
 
     def transform_input_lengths(self, input_lengths):
         """
@@ -239,8 +254,8 @@ class ConformerEncoder(nn.Module):
         Returns:
             output_lengths (Tensor): new temporal lengths
         """
-        input_lengths = input_lengths >> 2
-        input_lengths -= 1
+        input_lengths = ((input_lengths - 3) // 2) + 1
+        input_lengths = ((input_lengths - 3) // 2) + 1
         return input_lengths
 
     def __str__(self):

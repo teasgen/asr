@@ -1,7 +1,7 @@
 defaults:
   - model: conformer
   - writer: wandb
-  - metrics: cer_wer_argmax
+  - metrics: cer_wer
   - datasets: libri_speech_100
   - dataloader: simple
   - transforms: only_instance
@@ -11,7 +11,7 @@ optimizer:
   lr: 3e-4
 lr_scheduler:
   _target_: torch.optim.lr_scheduler.OneCycleLR
-  max_lr: 1e-2
+  max_lr: 1e-3
   pct_start: 0.1
   steps_per_epoch: ${trainer.epoch_len}
   epochs: ${trainer.n_epochs}
@@ -29,7 +29,7 @@ trainer:
   resume_from: null # null or path to the checkpoint dir with *.pth and config.yaml
   device: cuda # device name or "auto"
   override: True # if True, will override the previous run with the same name
-  monitor: "min val_WER_(Argmax)" # "off" or "max/min metric_name", i.e. our goal is to maximize/minimize metric
+  monitor: "min val_WER" # "off" or "max/min metric_name", i.e. our goal is to maximize/minimize metric
   save_period: 5 # checkpoint each save_period epochs in addition to the best epoch
   early_stop: ${trainer.n_epochs} # epochs for early stopping
   save_dir: "saved"

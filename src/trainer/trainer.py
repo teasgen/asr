@@ -86,7 +86,8 @@ class Trainer(BaseTrainer):
             self.log_predictions(**batch)
 
     def log_spectrogram(self, spectrogram, **batch):
-        spectrogram_for_plot = torch.log(spectrogram[0].detach().cpu()).clamp(1e-5)
+        # spectrogram_for_plot = torch.log(spectrogram[0].detach().cpu()).clamp(1e-5)
+        spectrogram_for_plot = spectrogram[0].detach().cpu()
         image = plot_spectrogram(spectrogram_for_plot)
         self.writer.add_image("spectrogram", image)
 
@@ -108,6 +109,7 @@ class Trainer(BaseTrainer):
         rows = {}
         for preds, target, raw_pred, audio_path in tuples[:examples_to_log]:
             target = self.text_encoder.normalize_text(target)
+            print(target, preds)
             cer = min(calc_cer(target, pred) for pred in preds) * 100
             wer = min(calc_wer(target, pred) for pred in preds) * 100
 
