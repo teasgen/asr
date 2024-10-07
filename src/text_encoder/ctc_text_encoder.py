@@ -7,7 +7,7 @@ from pyctcdecode import build_ctcdecoder
 
 
 class CTCTextEncoder:
-    EMPTY_TOK = "-"
+    EMPTY_TOK = ""
 
     def __init__(self, alphabet=None, decoder_type="argmax", **kwargs):
         """
@@ -27,11 +27,11 @@ class CTCTextEncoder:
                 i.split("\t")[0].lower().strip()
                 for i in open('/home/teasgen/.cache/torch/hub/torchaudio/decoder-assets/librispeech-4-gram/lexicon_my.txt').readlines()
             ]
-            lm_decoder = build_ctcdecoder(
+            self.lm_decoder = build_ctcdecoder(
                 [""] + self.alphabet,
                 kenlm_model_path="/home/teasgen/.cache/torch/hub/torchaudio/decoder-assets/librispeech-4-gram/lm.bin",
                 alpha=0.6,
-                beta=0.15,
+                beta=0.5,
                 unigrams=unigrams
             )
         self.decoder_type = decoder_type
@@ -50,8 +50,6 @@ class CTCTextEncoder:
 
     def encode(self, text) -> torch.Tensor:
         text = self.normalize_text(text)
-        if " " not in self.vocab:
-            text = text.replace(" ", "|")
         try:
             return torch.Tensor([self.char2ind[char] for char in text]).unsqueeze(0)
         except KeyError:
@@ -102,45 +100,25 @@ class CTCTextEncoder:
                 preds = [hypo for (hypo, _) in preds]
                 pred_texts.append(preds)
             return pred_texts
-        elif self.decoder_type == "beam_search_open_source":
-            from pyctcdecode import build_ctcdecoder
-
-            labels = [
-                "", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l",
-                "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", " "
-            ]
-
-            decoder = build_ctcdecoder(labels, alpha=0.5, beta=1.0)
+        elif self.decoder_type == "beam_search_lm":
             log_probs = log_probs.cpu().numpy()
             for log_probs_line, length in zip(log_probs, log_probs_length):
-                preds = decoder.decode_beams(log_probs_line, 5)
+                preds = self.lm_decoder.decode_beams(log_probs_line, 10)
                 preds = [x[0] for x in preds]
                 pred_texts.append(preds)
             return pred_texts
         elif self.decoder_type == "beam_search_torch":
             from torchaudio.models.decoder import ctc_decoder
-
-            # decoder = ctc_decoder(
-            #     lexicon=None,
-            #     tokens=["","a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l","m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", " "],
-            #     blank_token="",
-            #     sil_token=" ",
-            #     nbest=10,
-            #     beam_size=10,
-            # )
             decoder = ctc_decoder(
-                tokens=self.vocab,
-                blank_token="-",
-                sil_token="|",
-                nbest=5,
-                beam_size=5,
                 lexicon=None,
-                lm='/home/teasgen/.cache/torch/hub/torchaudio/decoder-assets/librispeech-4-gram/lm.bin'
+                tokens=self.vocab,
+                blank_token="",
+                sil_token=" ",
+                nbest=10,
+                beam_size=10,
             )
-            torch.save(log_probs, "log_probs.pt")
             pred_hypos = decoder(log_probs.to(torch.float32), torch.from_numpy(log_probs_length))
-            # pred_hypos = decoder(log_probs.to(torch.float32))
-            pred_texts = [["".join(decoder.idxs_to_tokens(hypo.tokens)).strip().replace("|", " ") for hypo in preds] for preds in pred_hypos]
+            pred_texts = [["".join(decoder.idxs_to_tokens(hypo.tokens)).strip() for hypo in preds] for preds in pred_hypos]
             return pred_texts
         else:
             raise NotImplementedError

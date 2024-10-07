@@ -20,7 +20,6 @@ loss_function:
   _target_: src.loss.CTCLossWrapper
 text_encoder:
   _target_: src.text_encoder.CTCTextEncoder
-  alphabet: ['|', 'e', 't', 'a', 'o', 'n', 'i', 'h', 's', 'r', 'd', 'l', 'u', 'm', 'w', 'c', 'f', 'g', 'y', 'p', 'b', 'v', 'k', "", 'x', 'j', 'q', 'z']
   decoder_type: beam_search
 trainer:
   log_step: 50

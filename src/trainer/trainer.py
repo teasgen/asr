@@ -94,6 +94,9 @@ class Trainer(BaseTrainer):
         self, text, log_probs, log_probs_length, audio_path, examples_to_log=10, **batch
     ):
         # raw argmax predictions
+        log_probs = log_probs[: examples_to_log]
+        log_probs_length = log_probs_length[: examples_to_log]
+        text = text[: examples_to_log]
         argmax_inds = log_probs.cpu().argmax(-1).numpy()
         argmax_inds = [
             inds[: int(ind_len)]
@@ -106,13 +109,14 @@ class Trainer(BaseTrainer):
         tuples = list(zip(predictions, text, argmax_texts_raw, audio_path))
 
         rows = {}
-        for preds, target, raw_pred, audio_path in tuples[:examples_to_log]:
+        for idx, (preds, target, raw_pred, audio_path) in enumerate(tuples[:examples_to_log]):
             target = self.text_encoder.normalize_text(target)
             print(target, preds)
             cer = min(calc_cer(target, pred) for pred in preds) * 100
             wer = min(calc_wer(target, pred) for pred in preds) * 100
 
             rows[Path(audio_path).name] = {
+                "audio": self.writer.add_audio(batch[idx], return_only_audio=True),
                 "target": target,
                 "raw prediction": raw_pred,
                 "predictions": preds[0],
