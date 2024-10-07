@@ -147,8 +147,8 @@ class BaseDataset(Dataset):
             return instance_data
 
         if single_key is not None:
-            # this key sould be defined in Transforms
-            instance_data[single_key] = self.instance_transforms[single_key](instance_data[single_key])
+            if single_key in self.instance_transforms: # eg train mode
+                instance_data[single_key] = self.instance_transforms[single_key](instance_data[single_key])
             return instance_data
 
         for transform_name in self.instance_transforms.keys():
@@ -157,6 +157,7 @@ class BaseDataset(Dataset):
             instance_data[transform_name] = self.instance_transforms[
                 transform_name
             ](instance_data[transform_name])
+        return instance_data
 
     @staticmethod
     def _filter_records_from_dataset(

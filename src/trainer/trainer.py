@@ -80,6 +80,7 @@ class Trainer(BaseTrainer):
         # logging scheme might be different for different partitions
         if mode == "train":  # the method is called only every self.log_step steps
             self.log_spectrogram(**batch)
+            self.log_audio(**batch)
         else:
             # Log Stuff
             self.log_spectrogram(**batch)
@@ -89,6 +90,9 @@ class Trainer(BaseTrainer):
         spectrogram_for_plot = spectrogram[0].detach().cpu()
         image = plot_spectrogram(spectrogram_for_plot)
         self.writer.add_image("spectrogram", image)
+
+    def log_audio(self, audio, **batch):
+        self.writer.add_audio("audio_train", audio[0], sample_rate=16000)
 
     def log_predictions(
         self, text, log_probs, log_probs_length, audio_path, examples_to_log=10, **batch
@@ -114,9 +118,13 @@ class Trainer(BaseTrainer):
             print(target, preds)
             cer = min(calc_cer(target, pred) for pred in preds) * 100
             wer = min(calc_wer(target, pred) for pred in preds) * 100
-
             rows[Path(audio_path).name] = {
-                "audio": self.writer.add_audio(batch[idx], return_only_audio=True),
+                "audio": self.writer.add_audio(
+                    audio_name=None,
+                    audio=batch["audio"][idx],
+                    sample_rate=16000,
+                    return_only_audio=True
+                ),
                 "target": target,
                 "raw prediction": raw_pred,
                 "predictions": preds[0],

@@ -10,14 +10,21 @@ from tqdm import tqdm
 from src.datasets.base_dataset import BaseDataset
 from src.utils.io_utils import ROOT_PATH
 
+# URL_LINKS = {
+#     "dev-clean": "https://www.openslr.org/resources/12/dev-clean.tar.gz",
+#     "dev-other": "https://www.openslr.org/resources/12/dev-other.tar.gz",
+#     "test-clean": "https://www.openslr.org/resources/12/test-clean.tar.gz",
+#     "test-other": "https://www.openslr.org/resources/12/test-other.tar.gz",
+#     "train-clean-100": "https://www.openslr.org/resources/12/train-clean-100.tar.gz",
+#     "train-clean-360": "https://www.openslr.org/resources/12/train-clean-360.tar.gz",
+#     "train-other-500": "https://www.openslr.org/resources/12/train-other-500.tar.gz",
+# }
+
 URL_LINKS = {
     "dev-clean": "https://www.openslr.org/resources/12/dev-clean.tar.gz",
-    "dev-other": "https://www.openslr.org/resources/12/dev-other.tar.gz",
     "test-clean": "https://www.openslr.org/resources/12/test-clean.tar.gz",
-    "test-other": "https://www.openslr.org/resources/12/test-other.tar.gz",
     "train-clean-100": "https://www.openslr.org/resources/12/train-clean-100.tar.gz",
     "train-clean-360": "https://www.openslr.org/resources/12/train-clean-360.tar.gz",
-    "train-other-500": "https://www.openslr.org/resources/12/train-other-500.tar.gz",
 }
 
 

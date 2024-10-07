@@ -16,7 +16,7 @@ def collate_fn(dataset_items: list[dict]):
             of the tensors or lists.
     """
     pack_to_tensors_batch_keys = ["spectrogram", "text_encoded"]
-    pack_to_list_batch_keys = ["text", "audio_path"]
+    pack_to_list_batch_keys = ["text", "audio_path", "audio"]
     result_batch = {}
     for key in pack_to_tensors_batch_keys + pack_to_list_batch_keys:
         lengths = []
@@ -33,7 +33,7 @@ def collate_fn(dataset_items: list[dict]):
                 torch.nn.functional.pad(x, (0, max_len - x.shape[-1]))
                 for x in list_of_batch_values
             ]
-            result_batch[key] = torch.cat(list_of_batch_values, dim=0)
+            result_batch[key] = torch.cat(list_of_batch_values, dim=0).to(torch.bfloat16)
             result_batch[f"{key}_length"] = torch.tensor(lengths)
         else:
             result_batch[key] = list_of_batch_values
