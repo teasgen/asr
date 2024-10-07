@@ -3,11 +3,11 @@ from collections import defaultdict
 from string import ascii_lowercase
 
 import torch
-import numpy as np
+from pyctcdecode import build_ctcdecoder
 
 
 class CTCTextEncoder:
-    EMPTY_TOK = ""
+    EMPTY_TOK = "-"
 
     def __init__(self, alphabet=None, decoder_type="argmax", **kwargs):
         """
@@ -22,6 +22,18 @@ class CTCTextEncoder:
         self.alphabet = alphabet
 
         # assert decoder_type in ["argmax", "beam_search", "beam_search_open_source"]
+        if decoder_type == "beam_search_lm":
+            unigrams = [
+                i.split("\t")[0].lower().strip()
+                for i in open('/home/teasgen/.cache/torch/hub/torchaudio/decoder-assets/librispeech-4-gram/lexicon_my.txt').readlines()
+            ]
+            lm_decoder = build_ctcdecoder(
+                [""] + self.alphabet,
+                kenlm_model_path="/home/teasgen/.cache/torch/hub/torchaudio/decoder-assets/librispeech-4-gram/lm.bin",
+                alpha=0.6,
+                beta=0.15,
+                unigrams=unigrams
+            )
         self.decoder_type = decoder_type
         self.vocab = [self.EMPTY_TOK] + list(self.alphabet)
         self.empty_token_idx = 0
@@ -38,6 +50,8 @@ class CTCTextEncoder:
 
     def encode(self, text) -> torch.Tensor:
         text = self.normalize_text(text)
+        if " " not in self.vocab:
+            text = text.replace(" ", "|")
         try:
             return torch.Tensor([self.char2ind[char] for char in text]).unsqueeze(0)
         except KeyError:
@@ -104,19 +118,29 @@ class CTCTextEncoder:
                 pred_texts.append(preds)
             return pred_texts
         elif self.decoder_type == "beam_search_torch":
-            import torch
             from torchaudio.models.decoder import ctc_decoder
 
+            # decoder = ctc_decoder(
+            #     lexicon=None,
+            #     tokens=["","a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l","m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", " "],
+            #     blank_token="",
+            #     sil_token=" ",
+            #     nbest=10,
+            #     beam_size=10,
+            # )
             decoder = ctc_decoder(
+                tokens=self.vocab,
+                blank_token="-",
+                sil_token="|",
+                nbest=5,
+                beam_size=5,
                 lexicon=None,
-                tokens=["","a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l","m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", " "],
-                blank_token="",
-                sil_token=" ",
-                nbest=10,
-                beam_size=10,
+                lm='/home/teasgen/.cache/torch/hub/torchaudio/decoder-assets/librispeech-4-gram/lm.bin'
             )
+            torch.save(log_probs, "log_probs.pt")
             pred_hypos = decoder(log_probs.to(torch.float32), torch.from_numpy(log_probs_length))
-            pred_texts = [["".join(decoder.idxs_to_tokens(hypo.tokens)).strip() for hypo in preds] for preds in pred_hypos]
+            # pred_hypos = decoder(log_probs.to(torch.float32))
+            pred_texts = [["".join(decoder.idxs_to_tokens(hypo.tokens)).strip().replace("|", " ") for hypo in preds] for preds in pred_hypos]
             return pred_texts
         else:
             raise NotImplementedError
@@ -126,14 +150,10 @@ class CTCTextEncoder:
         for idx, next_prob in enumerate(next_probs):
             cur_char = self.ind2char[idx]
             for (prefix, last_char), proba in dp.items():
-                if last_char == cur_char:
+                if last_char == cur_char or (cur_char == self.EMPTY_TOK):
                     new_prefix = prefix
                 else:
-                    if last_char != self.EMPTY_TOK:
-                        new_prefix = prefix + cur_char
-                    else:
-                        new_prefix = prefix
-
+                    new_prefix = prefix + cur_char
                 new_dp[(new_prefix, cur_char)] += proba * next_prob
         return new_dp
 

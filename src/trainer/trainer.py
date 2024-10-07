@@ -86,7 +86,6 @@ class Trainer(BaseTrainer):
             self.log_predictions(**batch)
 
     def log_spectrogram(self, spectrogram, **batch):
-        # spectrogram_for_plot = torch.log(spectrogram[0].detach().cpu()).clamp(1e-5)
         spectrogram_for_plot = spectrogram[0].detach().cpu()
         image = plot_spectrogram(spectrogram_for_plot)
         self.writer.add_image("spectrogram", image)
