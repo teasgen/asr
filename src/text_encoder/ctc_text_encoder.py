@@ -114,7 +114,7 @@ class CTCTextEncoder:
                 tokens=self.vocab,
                 blank_token="",
                 sil_token=" ",
-                nbest=10,
+                nbest=1,
                 beam_size=10,
             )
             pred_hypos = decoder(log_probs.to(torch.float32), torch.from_numpy(log_probs_length))

@@ -19,7 +19,6 @@ class WERMetric(BaseMetric):
         predictions = self.text_encoder.get_prediction(log_probs, log_probs_length)
         for pred_texts, target_text in zip(predictions, text):
             target_text = self.text_encoder.normalize_text(target_text)
-            wers.append(
-                min(calc_wer(target_text, pred_text) for pred_text in pred_texts)
-            )
+            best_text = pred_texts[0]
+            wers.append(calc_wer(target_text, best_text))
         return sum(wers) / len(wers)

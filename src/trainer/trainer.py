@@ -115,9 +115,10 @@ class Trainer(BaseTrainer):
         rows = {}
         for idx, (preds, target, raw_pred, audio_path) in enumerate(tuples[:examples_to_log]):
             target = self.text_encoder.normalize_text(target)
-            print(target, preds)
-            cer = min(calc_cer(target, pred) for pred in preds) * 100
-            wer = min(calc_wer(target, pred) for pred in preds) * 100
+            best_pred = preds[0]
+            print(target, "<--->", best_pred)
+            cer = calc_cer(target, best_pred) * 100
+            wer = calc_wer(target, best_pred) * 100
             rows[Path(audio_path).name] = {
                 "audio": self.writer.add_audio(
                     audio_name=None,
@@ -127,7 +128,7 @@ class Trainer(BaseTrainer):
                 ),
                 "target": target,
                 "raw prediction": raw_pred,
-                "predictions": preds[0],
+                "predictions": best_pred,
                 "wer": wer,
                 "cer": cer,
             }

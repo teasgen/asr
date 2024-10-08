@@ -1,5 +1,3 @@
-from collections import defaultdict
-
 import torch
 
 
@@ -15,8 +13,11 @@ def collate_fn(dataset_items: list[dict]):
         result_batch (dict[Union[Tensor, List]]): dict, containing batch-version
             of the tensors or lists.
     """
-    pack_to_tensors_batch_keys = ["spectrogram", "text_encoded"]
-    pack_to_list_batch_keys = ["text", "audio_path", "audio"]
+    pack_to_tensors_batch_keys = ["spectrogram"]
+    pack_to_list_batch_keys = ["audio_path", "audio"]
+    if dataset_items[0]["text"] is not None: # could be None during inference
+        pack_to_list_batch_keys.append("text")
+        pack_to_tensors_batch_keys.append("text_encoded")
     result_batch = {}
     for key in pack_to_tensors_batch_keys + pack_to_list_batch_keys:
         lengths = []
@@ -33,7 +34,7 @@ def collate_fn(dataset_items: list[dict]):
                 torch.nn.functional.pad(x, (0, max_len - x.shape[-1]))
                 for x in list_of_batch_values
             ]
-            result_batch[key] = torch.cat(list_of_batch_values, dim=0).to(torch.bfloat16)
+            result_batch[key] = torch.cat(list_of_batch_values, dim=0)
             result_batch[f"{key}_length"] = torch.tensor(lengths)
         else:
             result_batch[key] = list_of_batch_values

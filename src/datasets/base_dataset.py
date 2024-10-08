@@ -54,7 +54,7 @@ class BaseDataset(Dataset):
             index, max_audio_length, max_text_length
         )
         index = self._shuffle_and_limit_index(index, limit, shuffle_index)
-        if not shuffle_index:
+        if not shuffle_index and "audio_len" in index[0]:
             index = self._sort_index(index)
 
         self._index: list[dict] = index
@@ -81,8 +81,12 @@ class BaseDataset(Dataset):
         data_dict = self._index[ind]
         audio_path = data_dict["path"]
         audio = self.load_audio(audio_path)
-        text = data_dict["text"]
-        text_encoded = self.text_encoder.encode(text)
+        if "text" in data_dict:
+            text = data_dict["text"]
+            text_encoded = self.text_encoder.encode(text)
+        else:
+            text = None
+            text_encoded = None
 
         instance_data = {
             "audio": audio,
@@ -235,14 +239,14 @@ class BaseDataset(Dataset):
             assert "path" in entry, (
                 "Each dataset item should include field 'path'" " - path to audio file."
             )
-            assert "text" in entry, (
-                "Each dataset item should include field 'text'"
-                " - object ground-truth transcription."
-            )
-            assert "audio_len" in entry, (
-                "Each dataset item should include field 'audio_len'"
-                " - length of the audio."
-            )
+            # assert "text" in entry, (
+            #     "Each dataset item should include field 'text'"
+            #     " - object ground-truth transcription."
+            # )
+            # assert "audio_len" in entry, (
+            #     "Each dataset item should include field 'audio_len'"
+            #     " - length of the audio."
+            # )
 
     @staticmethod
     def _sort_index(index):

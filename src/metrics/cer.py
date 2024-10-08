@@ -18,7 +18,6 @@ class CERMetric(BaseMetric):
         predictions = self.text_encoder.get_prediction(log_probs, log_probs_length)
         for pred_texts, target_text in zip(predictions, text):
             target_text = self.text_encoder.normalize_text(target_text)
-            cers.append(
-                min(calc_cer(target_text, pred_text) for pred_text in pred_texts)
-            )
+            best_text = pred_texts[0]
+            cers.append(calc_cer(target_text, best_text))
         return sum(cers) / len(cers)
