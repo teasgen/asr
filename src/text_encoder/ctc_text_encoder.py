@@ -100,14 +100,14 @@ class CTCTextEncoder:
             return pred_texts
         elif self.decoder_type == "beam_search":
             for log_probs_line, length in zip(log_probs, log_probs_length):
-                preds = self.ctc_beam_search(log_probs_line[:].exp().numpy(), length, 10)
+                preds = self.ctc_beam_search(log_probs_line[:].exp().numpy(), length, 50)
                 preds = [hypo for (hypo, _) in preds]
                 pred_texts.append(preds)
             return pred_texts
         elif self.decoder_type == "beam_search_lm":
             log_probs = log_probs.cpu().numpy()
             for log_probs_line, length in zip(log_probs, log_probs_length):
-                preds = self.lm_decoder.decode_beams(log_probs_line, 50)
+                preds = self.lm_decoder.decode_beams(log_probs_line, 10)
                 preds = [x[0] for x in preds]
                 pred_texts.append(preds)
             return pred_texts

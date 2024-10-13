@@ -1,5 +1,4 @@
 # Automatic Speech Recognition (ASR) with PyTorch
-conda install -c conda-forge gcc=12.1.0
 
 <p align="center">
   <a href="#about">About</a> •
@@ -22,6 +21,9 @@ Follow these steps to install the project:
 
    # activate env
    conda activate project_env
+
+   # support youtokentome ://
+   conda install -c conda-forge gcc=12.1.0
    ```
 
 1. Install all required packages
@@ -34,10 +36,6 @@ Follow these steps to install the project:
    ```bash
    pre-commit install
    ```
-
-3. Install LM files for beam search with LM
-   ```bash
-   python3 src/utils/install_lm.py 
    ```
 
 ## How To Do Train
