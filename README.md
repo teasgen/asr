@@ -24,6 +24,7 @@ Follow these steps to install the project:
 
    # support youtokentome ://
    conda install -c conda-forge gcc=12.1.0
+   pip install Cython
    ```
 
 1. Install all required packages
@@ -36,6 +37,7 @@ Follow these steps to install the project:
    ```bash
    pre-commit install
    ```
+If you have issues with installing `youtokentome` library please write me or `youtokentome` authors.
 
 ## How To Do Train
 You should have single A100-80gb GPU to exactly reproduce training, otherwise please implement and use gradient accumulation
@@ -81,7 +83,7 @@ All generated texts will be saved into `data/saved/evals` directory with corresp
 
    When you get transcriptions, run following command to calculate WER and CER metrics
    ```bash
-   export PYTHONPATH=./ && python3 src/utils/calculate_cer_wer.py --predicts-dir <ABSOLUTE_PATH_TO_DIRECTORY>/data/saved/evals/test --gt-dir <ABSOLUTE_PATH_TO_DIRECTORY>/data/test_data/transcriptions
+   export PYTHONPATH=./ && python3 src/utils/calculate_cer_wer.py --predicts-dir data/saved/evals/test --gt-dir data/test_data/transcriptions
    ```
 
 1. If you want to calculate metrics on dataset provide a it as same as `data/test_data` format and run
