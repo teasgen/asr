@@ -8,6 +8,7 @@ from pyctcdecode import build_ctcdecoder
 
 class CTCTextEncoder:
     EMPTY_TOK = ""
+    SILENCE_TOKEN = " "
 
     def __init__(self, alphabet=None, decoder_type="argmax", **kwargs):
         """
@@ -21,14 +22,14 @@ class CTCTextEncoder:
 
         self.alphabet = alphabet
 
-        # assert decoder_type in ["argmax", "beam_search", "beam_search_open_source"]
+        assert decoder_type in ["argmax", "beam_search", "beam_search_lm", "beam_search_torch"], "Choose one of them pls"
         if decoder_type == "beam_search_lm":
             unigrams = [
                 i.split("\t")[0].lower().strip()
                 for i in open('/home/teasgen/.cache/torch/hub/torchaudio/decoder-assets/librispeech-4-gram/lexicon_my.txt').readlines()
             ]
             self.lm_decoder = build_ctcdecoder(
-                [""] + self.alphabet,
+                [self.EMPTY_TOK] + self.alphabet,
                 kenlm_model_path="/home/teasgen/.cache/torch/hub/torchaudio/decoder-assets/librispeech-4-gram/lm.bin",
                 alpha=0.6,
                 beta=0.5,
@@ -96,14 +97,14 @@ class CTCTextEncoder:
             return pred_texts
         elif self.decoder_type == "beam_search":
             for log_probs_line, length in zip(log_probs, log_probs_length):
-                preds = self.ctc_beam_search(log_probs_line[:].exp().numpy(), 5)
+                preds = self.ctc_beam_search(log_probs_line[:].exp().numpy(), length, 10)
                 preds = [hypo for (hypo, _) in preds]
                 pred_texts.append(preds)
             return pred_texts
         elif self.decoder_type == "beam_search_lm":
             log_probs = log_probs.cpu().numpy()
             for log_probs_line, length in zip(log_probs, log_probs_length):
-                preds = self.lm_decoder.decode_beams(log_probs_line, 10)
+                preds = self.lm_decoder.decode_beams(log_probs_line, 50)
                 preds = [x[0] for x in preds]
                 pred_texts.append(preds)
             return pred_texts
@@ -112,13 +113,14 @@ class CTCTextEncoder:
             decoder = ctc_decoder(
                 lexicon=None,
                 tokens=self.vocab,
-                blank_token="",
-                sil_token=" ",
+                blank_token=self.EMPTY_TOK,
+                sil_token=self.SILENCE_TOKEN,
                 nbest=1,
                 beam_size=10,
             )
             pred_hypos = decoder(log_probs.to(torch.float32), torch.from_numpy(log_probs_length))
-            pred_texts = [["".join(decoder.idxs_to_tokens(hypo.tokens)).strip() for hypo in preds] for preds in pred_hypos]
+            # pred_texts = [["".join(decoder.idxs_to_tokens(hypo.tokens)).strip() for hypo in preds] for preds in pred_hypos]
+            pred_texts = [[self.decode(hypo.tokens).strip() for hypo in preds] for preds in pred_hypos]
             return pred_texts
         else:
             raise NotImplementedError
@@ -138,10 +140,10 @@ class CTCTextEncoder:
     def truncate(self, dp: dict, beam_size: int):
         return dict(sorted(dp.items(), key=lambda x: -x[1])[:beam_size])
 
-    def ctc_beam_search(self, log_probs: torch.Tensor, beam_size: int) -> list:
+    def ctc_beam_search(self, probs: torch.Tensor, length: torch.Tensor, beam_size: int) -> list:
         dp = {("", self.EMPTY_TOK): 1.0}
-        for log_proba in log_probs:
-            dp = self.expand_merge(dp, log_proba)
+        for proba in probs[:length]:
+            dp = self.expand_merge(dp, proba)
             dp = self.truncate(dp, beam_size)
         return [
             (prefix, proba)

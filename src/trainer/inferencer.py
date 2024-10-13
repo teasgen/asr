@@ -139,24 +139,6 @@ class Inferencer(BaseTrainer):
             output_filename = self.save_path / part / f"output_{output_id}.txt"
             with open(output_filename, "w") as f:
                 f.write(pred[0])
-        
-        # for i in range(batch_size):
-        #     # clone because of
-        #     # https://github.com/pytorch/pytorch/issues/1995
-        #     logits = batch["log_probs"][i].clone()
-        #     label = batch["labels"][i].clone()
-        #     pred_label = logits.argmax(dim=-1)
-
-        #     output_id = current_id + i
-
-        #     output = {
-        #         "pred_label": pred_label,
-        #         "label": label,
-        #     }
-
-        #     if self.save_path is not None:
-        #         # you can use safetensors or other lib here
-        #         torch.save(output, self.save_path / part / f"output_{output_id}.pth")
 
         return batch
 

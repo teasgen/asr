@@ -193,7 +193,7 @@ class ConformerEncoder(nn.Module):
         kernel_size=31,
         n_layers=16,
         n_heads=4,
-        dropout=0.0,
+        dropout=0.1,
     ):
         super().__init__()
         self.conv_subsampling = Conv2dSubsampling(d_hidden)

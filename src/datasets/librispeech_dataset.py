@@ -10,28 +10,19 @@ from tqdm import tqdm
 from src.datasets.base_dataset import BaseDataset
 from src.utils.io_utils import ROOT_PATH
 
-# URL_LINKS = {
-#     "dev-clean": "https://www.openslr.org/resources/12/dev-clean.tar.gz",
-#     "dev-other": "https://www.openslr.org/resources/12/dev-other.tar.gz",
-#     "test-clean": "https://www.openslr.org/resources/12/test-clean.tar.gz",
-#     "test-other": "https://www.openslr.org/resources/12/test-other.tar.gz",
-#     "train-clean-100": "https://www.openslr.org/resources/12/train-clean-100.tar.gz",
-#     "train-clean-360": "https://www.openslr.org/resources/12/train-clean-360.tar.gz",
-#     "train-other-500": "https://www.openslr.org/resources/12/train-other-500.tar.gz",
-# }
-
 URL_LINKS = {
     "dev-clean": "https://www.openslr.org/resources/12/dev-clean.tar.gz",
+    "dev-other": "https://www.openslr.org/resources/12/dev-other.tar.gz",
     "test-clean": "https://www.openslr.org/resources/12/test-clean.tar.gz",
+    "test-other": "https://www.openslr.org/resources/12/test-other.tar.gz",
     "train-clean-100": "https://www.openslr.org/resources/12/train-clean-100.tar.gz",
     "train-clean-360": "https://www.openslr.org/resources/12/train-clean-360.tar.gz",
+    "train-other-500": "https://www.openslr.org/resources/12/train-other-500.tar.gz",
 }
 
 
 class LibrispeechDataset(BaseDataset):
     def __init__(self, part, data_dir=None, *args, **kwargs):
-        assert part in URL_LINKS or part == "train_all"
-
         if data_dir is None:
             data_dir = ROOT_PATH / "data" / "datasets" / "librispeech"
             data_dir.mkdir(exist_ok=True, parents=True)
@@ -45,8 +36,17 @@ class LibrispeechDataset(BaseDataset):
                 ],
                 [],
             )
-        else:
+        elif part in URL_LINKS:
             index = self._get_or_load_index(part)
+        else: # custom set of splits
+            parts = part.split("|")
+            index = sum(
+                [
+                    self._get_or_load_index(part)
+                    for part in parts
+                ],
+                [],
+            )
 
         super().__init__(index, *args, **kwargs)
 

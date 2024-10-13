@@ -1,6 +1,6 @@
 train:
   _target_: src.datasets.LibrispeechDataset
-  part: "train_all"
+  part: "train-other-500|train-clean-360"
   instance_transforms: ${transforms.instance_transforms.train}
 val:
   _target_: src.datasets.LibrispeechDataset
@@ -9,4 +9,8 @@ val:
 test:
   _target_: src.datasets.LibrispeechDataset
   part: "test-clean"
+  instance_transforms: ${transforms.instance_transforms.inference}
+test_other:
+  _target_: src.datasets.LibrispeechDataset
+  part: "test-other"
   instance_transforms: ${transforms.instance_transforms.inference}

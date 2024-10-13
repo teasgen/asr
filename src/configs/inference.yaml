@@ -1,16 +1,16 @@
 defaults:
-  - model: conformer
+  - model: deepspeech
   - metrics: cer_wer
-  - datasets: test_data_eval
-  - dataloader: simple_eval
+  - datasets: libri_speech_eval
+  - dataloader: simple
   - transforms: only_instance
   - _self_
 text_encoder:
   _target_: src.text_encoder.CTCTextEncoder
-  decoder_type: argmax
+  decoder_type: beam_search
 inferencer:
   device_tensors: ["spectrogram", "text_encoded"] # which tensors should be on device (ex. GPU)
   device: cuda
   save_path: "evals"
   seed: 42
-  from_pretrained: "saved/460h_conformer_beam_search_sft_to_360h/model_best.pth" # path to the pretrained model
+  from_pretrained: "/home/teasgen/dla/asr/saved/full_deepspeech_beam_search_torch_zero_to_hero_part_2_more_augs_wo_limits/model_best.pth" # path to the pretrained model

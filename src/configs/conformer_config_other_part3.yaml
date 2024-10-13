@@ -2,17 +2,17 @@ defaults:
   - model: conformer
   - writer: wandb
   - metrics: cer_wer
-  - datasets: libri_speech_100_360
+  - datasets: libri_speech_other
   - dataloader: simple
   - transforms: only_instance
   - _self_
 optimizer:
   _target_: torch.optim.AdamW
   lr: ${lr_scheduler.max_lr}
-  weight_decay: 1e-4
+  weight_decay: 1e-2
 lr_scheduler:
   _target_: torch.optim.lr_scheduler.OneCycleLR
-  max_lr: 4e-5
+  max_lr: 2e-4
   pct_start: 0.0
   steps_per_epoch: ${trainer.epoch_len}
   epochs: ${trainer.n_epochs}
@@ -23,15 +23,15 @@ text_encoder:
   _target_: src.text_encoder.CTCTextEncoder
   decoder_type: beam_search_torch
 trainer:
-  log_step: 200
-  n_epochs: 50
-  epoch_len: 500
+  log_step: 100
+  n_epochs: 156
+  epoch_len: 980
   device_tensors: ["spectrogram", "text_encoded"] # which tensors should be on device (ex. GPU)
   resume_from: null # null or path to the checkpoint dir with *.pth and config.yaml
   device: cuda # device name or "auto"
   override: True # if True, will override the previous run with the same name
   monitor: "min val_WER" # "off" or "max/min metric_name", i.e. our goal is to maximize/minimize metric
-  save_period: 5 # checkpoint each save_period epochs in addition to the best epoch
+  save_period: 1 # checkpoint each save_period epochs in addition to the best epoch
   early_stop: ${trainer.n_epochs} # epochs for early stopping
   save_dir: "saved"
   seed: 42
