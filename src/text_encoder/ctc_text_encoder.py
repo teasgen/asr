@@ -21,10 +21,13 @@ class CTCTextEncoder:
 
         if alphabet is None:
             alphabet = list(ascii_lowercase + " ")
-
         self.alphabet = alphabet
 
         assert decoder_type in ["argmax", "beam_search", "beam_search_lm", "beam_search_torch"], "Choose one of them pls"
+        if "beam_search" in decoder_type:
+            self.beam_size = kwargs.get("beam_size", 10)
+            print(f"Set beam_size to {self.beam_size}")
+
         if decoder_type == "beam_search_lm":
             lm_files = install_lm()
             unigrams = [
@@ -100,14 +103,14 @@ class CTCTextEncoder:
             return pred_texts
         elif self.decoder_type == "beam_search":
             for log_probs_line, length in zip(log_probs, log_probs_length):
-                preds = self.ctc_beam_search(log_probs_line[:].exp().numpy(), length, 50)
+                preds = self.ctc_beam_search(log_probs_line[:].exp().numpy(), length, self.beam_size)
                 preds = [hypo for (hypo, _) in preds]
                 pred_texts.append(preds)
             return pred_texts
         elif self.decoder_type == "beam_search_lm":
             log_probs = log_probs.cpu().numpy()
             for log_probs_line, length in zip(log_probs, log_probs_length):
-                preds = self.lm_decoder.decode_beams(log_probs_line, 50)
+                preds = self.lm_decoder.decode_beams(log_probs_line, self.beam_size)
                 preds = [x[0] for x in preds]
                 pred_texts.append(preds)
             return pred_texts
@@ -119,7 +122,7 @@ class CTCTextEncoder:
                 blank_token=self.EMPTY_TOK,
                 sil_token=self.SILENCE_TOKEN,
                 nbest=1,
-                beam_size=10,
+                beam_size=self.beam_size,
             )
             pred_hypos = decoder(log_probs.to(torch.float32), torch.from_numpy(log_probs_length))
             # pred_texts = [["".join(decoder.idxs_to_tokens(hypo.tokens)).strip() for hypo in preds] for preds in pred_hypos]

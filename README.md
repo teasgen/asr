@@ -81,6 +81,7 @@ All generated texts will be saved into `data/saved/evals` directory with corresp
    - beam_search_torch (fast batched algorithm)
    - beam_search_lm (slow single-sample beam search with open source kenlm)
 
+   To speed up or raise score you may change `beam_size` value in hydra config. For getting reported values I used beam_size=50
    When you get transcriptions, run following command to calculate WER and CER metrics
    ```bash
    export PYTHONPATH=./ && python3 src/utils/calculate_cer_wer.py --predicts-dir data/saved/evals/test --gt-dir data/test_data/transcriptions

@@ -8,6 +8,7 @@ defaults:
 text_encoder:
   _target_: src.text_encoder.CTCTextEncoder
   decoder_type: beam_search_lm
+  beam_size: 50
 inferencer:
   device_tensors: ["spectrogram", "text_encoded"] # which tensors should be on device (ex. GPU)
   device: cuda
