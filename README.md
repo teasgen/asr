@@ -35,6 +35,11 @@ Follow these steps to install the project:
    pre-commit install
    ```
 
+3. Install LM files for beam search with LM
+   ```bash
+   python3 src/utils/install_lm.py 
+   ```
+
 ## How To Do Train
 You should have single A100-80gb GPU to exactly reproduce training, otherwise please implement and use gradient accumulation
 
@@ -50,21 +55,30 @@ python3 train.py -cn=deepspeech_config_part2.yaml writer.run_name=full_deepspeec
 ```
 Stop second training at 45 epoches (in total with first step). Two-steps will take about 24 hours to train
 
+> Pay attention that in all configs base model is DeepSpeech2-repack-by-teasgen, but you may use Conformer additionally (take a look at conformer_config.yaml)
+
+Also you may use BPE tokenizer instead of dummy chars, to do it firstly train BPE on full LibriSpeech dataset:
+```bash
+python3 src/utils/train_bpe.py --ls-indices-dir <ABSOLUTE_PATH_TO_DIRECTORY>/data/datasets/librispeech --dir-to-save-model <ABSOLUTE_PATH_TO_DIRECTORY>/data/bpe
+```
+And then run training as same as char tokenizer. For more hydra details take a look at deepspeech_config_bpe.yaml. Unfortunately in this mode you mustn't use beam search with LM.
+
 ## How To Evaluate
 0. To run inference provide custom dataset (possibly without transcriptions) as same as `data/test_data` format and run
    Optionally you can use LibriSpeech dataset format (set datasets=libri_speech_eval in hydra_config)
 
    ```bash
-   python3 inference.py -cn=inference.yaml
+   python3 inference.py -cn=inference.yaml dataloader.batch_size=5
    ```
    Set dataloader.batch_size not more than len(dataset)
+
    Optionally set `text_encoder.decoder_type` to preferred evalution algorithm. Possible values are:
    - argmax
    - beam_search (my slow implementation)
    - beam_search_torch (fast batched algorithm)
    - beam_search_lm (slow single-sample beam search with open source kenlm)
 
-   When you get transcriptions you get run following command to calculate WER and CER metrics
+   When you get transcriptions, run following command to calculate WER and CER metrics
    ```bash
    export PYTHONPATH=./ && python3 src/utils/calculate_cer_wer.py --predicts-dir <ABSOLUTE_PATH_TO_DIRECTORY>/data/saved/evals/test --gt-dir <ABSOLUTE_PATH_TO_DIRECTORY>/data/test_data/transcriptions
    ```
@@ -72,12 +86,10 @@ Stop second training at 45 epoches (in total with first step). Two-steps will ta
 1. If you want to calculate metrics on dataset provide a it as same as `data/test_data` format and run
    
    ```bash
-   python3 inference.py -cn=inference_and_metrics.yaml datasets.test.transcription_dir=data/test_data/transcriptions
+   python3 inference.py -cn=inference_and_metrics.yaml datasets.test.transcription_dir=data/test_data/transcriptions dataloader.batch_size=5
    ```
 
    Optionally you can use LibriSpeech dataset format (set datasets=libri_speech_eval in hydra_config)
-
-Pay attention that in all configs base model is DeepSpeech2-repack-by-teasgen, but you may use Conformer additionally (take a look at conformer_config.yaml)
 
 ## Credits
 

@@ -5,6 +5,8 @@ from string import ascii_lowercase
 import torch
 from pyctcdecode import build_ctcdecoder
 
+from .install_lm import install_lm
+
 
 class CTCTextEncoder:
     EMPTY_TOK = ""
@@ -24,13 +26,14 @@ class CTCTextEncoder:
 
         assert decoder_type in ["argmax", "beam_search", "beam_search_lm", "beam_search_torch"], "Choose one of them pls"
         if decoder_type == "beam_search_lm":
+            lm_files = install_lm()
             unigrams = [
                 i.split("\t")[0].lower().strip()
-                for i in open('/home/teasgen/.cache/torch/hub/torchaudio/decoder-assets/librispeech-4-gram/lexicon_my.txt').readlines()
+                for i in open(lm_files["lexicon"]).readlines()
             ]
             self.lm_decoder = build_ctcdecoder(
                 [self.EMPTY_TOK] + self.alphabet,
-                kenlm_model_path="/home/teasgen/.cache/torch/hub/torchaudio/decoder-assets/librispeech-4-gram/lm.bin",
+                kenlm_model_path=lm_files["lm_path"],
                 alpha=0.6,
                 beta=0.5,
                 unigrams=unigrams

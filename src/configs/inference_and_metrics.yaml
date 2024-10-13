@@ -1,7 +1,7 @@
 defaults:
   - model: deepspeech
   - metrics: cer_wer
-  - datasets: libri_speech_eval
+  - datasets: test_data_eval
   - dataloader: simple
   - transforms: only_instance
   - _self_
@@ -13,4 +13,4 @@ inferencer:
   device: cuda
   save_path: "evals"
   seed: 42
-  from_pretrained: "/home/teasgen/dla/asr/saved/full_deepspeech_beam_search_torch_zero_to_hero_part_2_more_augs_wo_limits/model_best.pth" # path to the pretrained model
+  from_pretrained: "saved/full_deepspeech_beam_search_torch_zero_to_hero_part_2_more_augs_wo_limits/model_best.pth" # path to the pretrained model

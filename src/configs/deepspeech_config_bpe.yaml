@@ -22,7 +22,7 @@ loss_function:
 text_encoder:
   _target_: src.text_encoder.BPECTCTextEncoder
   decoder_type: beam_search_torch
-  bpe_path: /home/teasgen/dla/asr/data/bpe/ls_bpe.model
+  bpe_path: data/bpe/ls_bpe.model
 trainer:
   log_step: 200
   n_epochs: 100
