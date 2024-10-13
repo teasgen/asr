@@ -36,7 +36,6 @@ Follow these steps to install the project:
    ```bash
    pre-commit install
    ```
-   ```
 
 ## How To Do Train
 You should have single A100-80gb GPU to exactly reproduce training, otherwise please implement and use gradient accumulation
@@ -60,6 +59,8 @@ Also you may use BPE tokenizer instead of dummy chars, to do it firstly train BP
 python3 src/utils/train_bpe.py --ls-indices-dir <ABSOLUTE_PATH_TO_DIRECTORY>/data/datasets/librispeech --dir-to-save-model <ABSOLUTE_PATH_TO_DIRECTORY>/data/bpe
 ```
 And then run training as same as char tokenizer. For more hydra details take a look at deepspeech_config_bpe.yaml. Unfortunately in this mode you mustn't use beam search with LM. You may download my trained BPE from `https://disk.yandex.ru/d/6KNUINjFGn9ofQ`
+
+Moreover, the training report and other logs are available in WandB https://api.wandb.ai/links/teasgen/dx35cnsu
 
 ## How To Evaluate
 All generated texts will be saved into `data/saved/evals` directory with corresponing names. Download pretrained model from `https://disk.yandex.ru/d/6KNUINjFGn9ofQ` and put it in `saved/full_deepspeech_beam_search_torch_zero_to_hero_part_2_more_augs_wo_limits/model_best.pth`
