@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import torch
 from tqdm.auto import tqdm
 
@@ -131,12 +133,10 @@ class Inferencer(BaseTrainer):
                 metrics.update(met.name, met(**batch))
 
         batch_size = batch["log_probs"].shape[0]
-        current_id = batch_idx * batch_size
 
         predictions = self.text_encoder.get_prediction(batch["log_probs"], batch["log_probs_length"])
         for idx, pred in enumerate(predictions):
-            output_id = current_id + idx
-            output_filename = self.save_path / part / f"output_{output_id}.txt"
+            output_filename = self.save_path / part / f"{Path(batch['audio_path'][idx]).stem}.txt"
             with open(output_filename, "w") as f:
                 f.write(pred[0])
 
@@ -156,7 +156,8 @@ class Inferencer(BaseTrainer):
         self.is_train = False
         self.model.eval()
 
-        self.evaluation_metrics.reset()
+        if self.evaluation_metrics is not None:
+            self.evaluation_metrics.reset()
 
         # create Save dir
         if self.save_path is not None:
@@ -175,4 +176,5 @@ class Inferencer(BaseTrainer):
                     metrics=self.evaluation_metrics,
                 )
 
-        return self.evaluation_metrics.result()
+        if self.evaluation_metrics is not None:
+            return self.evaluation_metrics.result()

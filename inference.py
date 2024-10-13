@@ -41,12 +41,14 @@ def main(config):
     print(model)
 
     # get metrics
-    metrics = {"inference": []}
-    for metric_config in config.metrics.get("inference", []):
-        # use text_encoder in metrics
-        metrics["inference"].append(
-            instantiate(metric_config, text_encoder=text_encoder)
-        )
+    metrics = None
+    if hasattr(config, "metrics"):
+        metrics = {"inference": []}
+        for metric_config in config.metrics.get("inference", []):
+            # use text_encoder in metrics
+            metrics["inference"].append(
+                instantiate(metric_config, text_encoder=text_encoder)
+            )
 
     # save_path for model predictions
     save_path = ROOT_PATH / "data" / "saved" / config.inferencer.save_path
@@ -67,6 +69,8 @@ def main(config):
     logs = inferencer.run_inference()
 
     for part in logs.keys():
+        if logs[part] is None:
+            continue
         for key, value in logs[part].items():
             full_key = part + "_" + key
             print(f"    {full_key:15s}: {value}")
